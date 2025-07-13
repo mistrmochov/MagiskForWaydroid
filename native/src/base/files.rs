@@ -299,8 +299,6 @@ impl Utf8CStr {
             #[cfg(feature = "selinux")]
             con: cstr::buf::new(),
         };
-        #[cfg(feature = "selinux")]
-        self.get_secontext(&mut attr.con)?;
         Ok(attr)
     }
 
@@ -321,11 +319,6 @@ impl Utf8CStr {
                 Some(self),
                 None,
             )?;
-        }
-
-        #[cfg(feature = "selinux")]
-        if !attr.con.is_empty() {
-            self.set_secontext(&attr.con)?;
         }
         Ok(())
     }
@@ -539,8 +532,6 @@ impl FsPathFollow {
             #[cfg(feature = "selinux")]
             con: cstr::buf::new(),
         };
-        #[cfg(feature = "selinux")]
-        self.get_secontext(&mut attr.con)?;
         Ok(attr)
     }
 
@@ -553,11 +544,6 @@ impl FsPathFollow {
             Some(Gid::from(attr.st.st_gid)),
         )
         .check_os_err("chown", Some(self), None)?;
-
-        #[cfg(feature = "selinux")]
-        if !attr.con.is_empty() {
-            self.set_secontext(&attr.con)?;
-        }
         Ok(())
     }
 
@@ -654,9 +640,6 @@ pub fn fd_get_attr(fd: RawFd) -> OsResult<'static, FileAttr> {
     let mut attr = FileAttr::new();
     unsafe {
         libc::fstat(fd, &mut attr.st).check_os_err("fstat", None, None)?;
-
-        #[cfg(feature = "selinux")]
-        fd_get_secontext(fd, &mut attr.con)?;
     }
     Ok(attr)
 }
@@ -665,11 +648,6 @@ pub fn fd_set_attr(fd: RawFd, attr: &FileAttr) -> OsResult<'_, ()> {
     unsafe {
         libc::fchmod(fd, (attr.st.st_mode & 0o777).as_()).check_os_err("fchmod", None, None)?;
         libc::fchown(fd, attr.st.st_uid, attr.st.st_gid).check_os_err("fchown", None, None)?;
-
-        #[cfg(feature = "selinux")]
-        if !attr.con.is_empty() {
-            fd_set_secontext(fd, &attr.con)?;
-        }
     }
     Ok(())
 }
