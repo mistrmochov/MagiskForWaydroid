@@ -7,6 +7,7 @@ use crate::ffi::{
 use crate::logging::{magisk_logging, setup_logfile, start_log_daemon};
 use crate::mount::{clean_mounts, setup_module_mount, setup_preinit_dir};
 use crate::package::ManagerInfo;
+use crate::rezygisk::{extract_rezygisk_to, install_rezygisk};
 use crate::selinux::restore_tmpcon;
 use crate::su::SuInfo;
 use crate::{get_prop, set_prop};
@@ -17,6 +18,7 @@ use base::{
 use std::fmt::Write as FmtWrite;
 use std::io::{BufReader, Write};
 use std::os::unix::net::UnixStream;
+use std::path::PathBuf;
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Mutex, OnceLock};
@@ -118,6 +120,14 @@ impl MagiskD {
         if !setup_magisk_env() {
             error!("* Magisk environment incomplete, abort");
             return true;
+        }
+
+        let rezygisk_go = self.get_db_setting(DbEntryKey::ZygiskConfig) != 0;
+        if rezygisk_go {
+            self.set_db_setting(DbEntryKey::ZygiskConfig, 0).log_ok();
+            let rezygisk_path = PathBuf::from("/data/local/tmp/rezygisk.zip");
+            extract_rezygisk_to(&rezygisk_path).log_ok();
+            install_rezygisk(&rezygisk_path, &secure_dir).log_ok();
         }
 
         // Check safe mode
