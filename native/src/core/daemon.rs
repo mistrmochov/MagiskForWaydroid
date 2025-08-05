@@ -9,7 +9,7 @@ use crate::module::disable_modules;
 use crate::mount::{clean_mounts, setup_preinit_dir};
 use crate::package::ManagerInfo;
 use crate::resetprop::{get_prop, set_prop};
-use crate::rezygisk::{extract_rezygisk_to, install_rezygisk};
+use crate::rezygisk::{extract_rezygisk_to, hide_rezygisk, install_rezygisk, is_rezygisk};
 use crate::selinux::restore_tmpcon;
 use crate::su::SuInfo;
 use crate::zygisk::ZygiskState;
@@ -183,6 +183,13 @@ impl MagiskD {
         setup_preinit_dir();
         self.ensure_manager();
         self.zygisk.lock().unwrap().reset(true);
+
+        if is_rezygisk() {
+            self.set_db_setting(DbEntryKey::ZygiskConfig, 1).log_ok();
+            std::thread::spawn(|| {
+                hide_rezygisk().log_ok();
+            });
+        }
     }
 
     pub fn boot_stage_handler(&self, client: i32, code: i32) {
