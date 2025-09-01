@@ -19,7 +19,6 @@ use base::{
 };
 use std::fmt::Write as FmtWrite;
 use std::io::{BufReader, Write};
-use std::os::unix::net::UnixStream;
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
